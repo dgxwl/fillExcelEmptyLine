@@ -39,16 +39,19 @@ public class Main {
             XSSFWorkbook newWorkBook = new XSSFWorkbook();
             newWorkBook.createSheet();
             XSSFSheet newSheetAt = newWorkBook.getSheetAt(0);
-            newSheetAt.createRow(0);
+            XSSFRow newSheetRow1 = newSheetAt.createRow(0);
 
             //复制表头
             for (int i = 0; i < columnNum; i++) {
                 XSSFCell cell = titleRow.getCell(i);
-                XSSFRow newSheetRow1 = newSheetAt.getRow(0);
                 newSheetRow1.createCell(i);
                 XSSFCell newCell = newSheetRow1.getCell(i);
                 newCell.setCellValue(cell.getStringCellValue());
             }
+
+            //表头增加一列是否为删行, 用于区别原本存在但是空的行
+            XSSFCell isDelTitleCell = newSheetRow1.createCell(columnNum);
+            isDelTitleCell.setCellValue("是否为删行");
 
             //拿到开始的序号
             XSSFRow r1 = sheet.getRow(1);
@@ -68,6 +71,7 @@ public class Main {
                     XSSFRow newRow = newSheetAt.createRow(startSeq);
                     XSSFCell newCell = newRow.createCell(0);
                     newCell.setCellValue(startSeq);
+                    newRow.createCell(columnNum).setCellValue("Y");  //标记为删行
                     startSeq++;
                 }
 
@@ -76,6 +80,9 @@ public class Main {
                 for (int j = 0; j < columnNum; j++) {
                     XSSFCell newCell = newRow.createCell(j);
                     XSSFCell cj = row.getCell(j);
+                    if (cj == null) {
+                        continue;
+                    }
                     newCell.setCellType(cj.getCellType());
 
                     switch (cell.getCellType()) {
