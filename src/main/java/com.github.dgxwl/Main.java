@@ -20,8 +20,8 @@ public class Main extends JPanel {
     private File excelFile;
 
     private void init() {  //初始化窗口界面
-        JFrame frame = new JFrame("geneboxY");
-        frame.setSize(600, 500);
+        JFrame frame = new JFrame("补全excel删除行");
+        frame.setSize(560, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
@@ -39,7 +39,7 @@ public class Main extends JPanel {
         textArea.setEditable(false);
         this.add(new JScrollPane(textArea));
 
-        pickFileDialog = new FileDialog(frame, "选择原始数据", FileDialog.LOAD);  //文件选择窗口
+        pickFileDialog = new FileDialog(frame, "选择文件", FileDialog.LOAD);  //文件选择窗口
 
         frame.add(this);
         frame.setVisible(true);
@@ -53,7 +53,8 @@ public class Main extends JPanel {
         }
 
         String destDir = excelFile.getParent();
-        File destFile = new File(destDir + File.separator + "行补全.xlsx");
+        String destFileStr = destDir + File.separator + "行补全.xlsx";
+        File destFile = new File(destFileStr);
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
              FileOutputStream fos = new FileOutputStream(destFile);
@@ -149,6 +150,9 @@ public class Main extends JPanel {
             }
 
             newWorkBook.write(fos);
+
+            //显示结果
+            textArea.setText("操作成功！" + "\n已生成文件：\n" + destFileStr);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -169,9 +173,6 @@ public class Main extends JPanel {
             excelFile = new File(dirPath, fileName);
 
             handle(excelFile);
-
-            //显示解析结果, 从中可得到SNP匹配情况和单倍群分型
-            textArea.setText("操作成功！");
         });
     }
 
