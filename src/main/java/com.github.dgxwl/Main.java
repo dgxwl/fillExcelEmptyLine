@@ -1,23 +1,63 @@
 package com.github.dgxwl;
 
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 
-public class Main {
+public class Main extends JPanel {
 
-    public static void main(String[] args) {
-        try (XSSFWorkbook workbook = new XSSFWorkbook("C:/Users/Administrator/Desktop/有删行.xlsx");
-             FileOutputStream fos = new FileOutputStream("C:/Users/Administrator/Desktop/行补全.xlsx")) {
+    private JTextArea textArea;
+    private JMenuItem openItem;
+    private FileDialog pickFileDialog;
+    private File excelFile;
+
+    private void init() {  //初始化窗口界面
+        JFrame frame = new JFrame("geneboxY");
+        frame.setSize(600, 500);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+
+        JMenu fileMenu = new JMenu("操作");  //操作菜单
+        openItem = new JMenuItem("选择文件");  //菜单项
+        fileMenu.add(openItem);
+
+        JMenuBar bar = new JMenuBar();  //菜单栏
+        bar.add(fileMenu);
+        frame.setJMenuBar(bar);
+
+        textArea = new JTextArea(25, 50);  //文本域
+        textArea.setText("提示: 操作->选择待补全excel文件, 稍等几秒钟即可看到结果");
+        textArea.setEditable(false);
+        this.add(new JScrollPane(textArea));
+
+        pickFileDialog = new FileDialog(frame, "选择原始数据", FileDialog.LOAD);  //文件选择窗口
+
+        frame.add(this);
+        frame.setVisible(true);
+    }
+
+    private void handle(File excelFile) {
+        String suffix = excelFile.getName().substring(excelFile.getName().lastIndexOf('.') + 1);
+        if (!"xls".equals(suffix) && !"xlsx".equals(suffix)) {
+            textArea.setText("无法解析" + suffix + "格式文件");
+            return ;
+        }
+
+        String destDir = excelFile.getParent();
+        File destFile = new File(destDir + File.separator + "行补全.xlsx");
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(excelFile);
+             FileOutputStream fos = new FileOutputStream(destFile);
+             XSSFWorkbook newWorkBook = new XSSFWorkbook()) {
             XSSFSheet sheet = workbook.getSheetAt(0);
             //获取列数
             int columnNum = sheet.getRow(0).getPhysicalNumberOfCells();
@@ -25,18 +65,17 @@ public class Main {
             int rowNum = sheet.getPhysicalNumberOfRows();
 
             if (columnNum < 1) {
-                //TODO 提示无数据
+                textArea.setText("文件无内容");
                 return ;
             }
             if (rowNum < 1) {
-                //TODO 提示无数据
+                textArea.setText("文件无内容");
                 return ;
             }
 
             XSSFRow titleRow = sheet.getRow(0);
 
             //创建新文件
-            XSSFWorkbook newWorkBook = new XSSFWorkbook();
             newWorkBook.createSheet();
             XSSFSheet newSheetAt = newWorkBook.getSheetAt(0);
             newSheetAt.createRow(0);
@@ -103,9 +142,35 @@ public class Main {
             }
 
             newWorkBook.write(fos);
-            newWorkBook.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleEvent() {
+        //监听打开选择文件菜单项
+        openItem.addActionListener(e -> {
+            pickFileDialog.setVisible(true);
+
+            String dirPath = pickFileDialog.getDirectory();
+            String fileName = pickFileDialog.getFile();
+
+            if (dirPath == null || fileName == null) {
+                return ;
+            }
+
+            excelFile = new File(dirPath, fileName);
+
+            handle(excelFile);
+
+            //显示解析结果, 从中可得到SNP匹配情况和单倍群分型
+            textArea.setText("操作成功！");
+        });
+    }
+
+    public static void main(String[] args) {
+        Main main = new Main();
+        main.init();
+        main.handleEvent();
     }
 }
